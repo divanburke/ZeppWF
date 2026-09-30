@@ -17,8 +17,6 @@ const WHITE = 0xF2F4ED
 const MUTED = 0x68705E
 const PANEL = 0x10130F
 
-const ROOT = 'assets/digits/'
-
 function text(x, y, w, h, value, size, color, align) {
   return hmUI.createWidget(hmUI.widget.TEXT, {
     x,
@@ -97,25 +95,42 @@ WatchFace({
       })
     }
 
-    // Large digital time.
-    hmUI.createWidget(hmUI.widget.IMG_TIME, {
-      hour_zero: 1,
-      hour_startX: 32,
-      hour_startY: 96,
-      hour_array: this.digits(),
-      hour_space: -2,
-      hour_unit_en: ROOT + 'colon.png',
-      hour_align: hmUI.align.LEFT,
-      minute_follow: 1,
-      minute_startX: 216,
-      minute_startY: 96,
-      minute_array: this.digits(),
-      minute_space: -2,
-      minute_align: hmUI.align.LEFT
+    // Large live digital time.
+    this.timeSensor = hmSensor.createSensor(hmSensor.id.TIME)
+    this.timeText = text(22, 90, 346, 112, '', 92, GREEN)
+    this.timeText.setProperty(hmUI.prop.MORE, {
+      text_style: hmUI.text_style.NONE,
+      char_space: -3
     })
 
-    // Date / day line.
-    text(36, 220, 318, 27, 'WED  30 SEP  2026', 20, WHITE)
+    this.dateText = text(36, 220, 318, 27, '', 20, WHITE)
+
+    this.updateTime()
+    this.timeSensor.addEventListener(hmSensor.event.MINUTEEND, () => {
+      this.updateTime()
+    })
+
+    // Live system data.
+    this.battery = hmSensor.createSensor(hmSensor.id.BATTERY)
+    this.batteryText = text(34, 414, 150, 18, '', 12, MUTED, hmUI.align.LEFT)
+    this.updateBattery()
+    this.battery.addEventListener(hmSensor.event.CHANGE, () => {
+      this.updateBattery()
+    })
+
+    this.steps = hmSensor.createSensor(hmSensor.id.STEP)
+    this.stepsText = text(136, 312, 126, 32, '', 25, WHITE)
+    this.updateSteps()
+    this.steps.addEventListener(hmSensor.event.CHANGE, () => {
+      this.updateSteps()
+    })
+
+    this.heart = hmSensor.createSensor(hmSensor.id.HEART)
+    this.heartText = text(216, 414, 150, 18, '', 12, MUTED, hmUI.align.RIGHT)
+    this.updateHeart()
+    this.heart.addEventListener(hmSensor.event.CHANGE, () => {
+      this.updateHeart()
+    })
 
     // Central divider.
     hmUI.createWidget(hmUI.widget.FILL_RECT, {
@@ -132,11 +147,6 @@ WatchFace({
 
     // Middle lower strip.
     text(136, 291, 118, 22, 'STEPS', 13, MUTED)
-    text(132, 312, 126, 32, '6 428', 25, WHITE)
-
-    // Tiny bottom labels.
-    text(24, 414, 150, 18, 'HEART   68', 12, MUTED, hmUI.align.LEFT)
-    text(216, 414, 150, 18, 'TEMP   21°', 12, MUTED, hmUI.align.RIGHT)
 
     // Accent baseline.
     hmUI.createWidget(hmUI.widget.FILL_RECT, {
@@ -148,19 +158,40 @@ WatchFace({
     })
   },
 
-  digits() {
-    return [
-      ROOT + '0.png',
-      ROOT + '1.png',
-      ROOT + '2.png',
-      ROOT + '3.png',
-      ROOT + '4.png',
-      ROOT + '5.png',
-      ROOT + '6.png',
-      ROOT + '7.png',
-      ROOT + '8.png',
-      ROOT + '9.png'
-    ]
+  updateTime() {
+    const t = this.timeSensor
+    const hour = String(t.format_hour).padStart(2, '0')
+    const minute = String(t.minute).padStart(2, '0')
+    const days = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']
+    const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
+
+    this.timeText.setProperty(hmUI.prop.MORE, {
+      text: hour + ':' + minute
+    })
+
+    this.dateText.setProperty(hmUI.prop.MORE, {
+      text: days[t.week - 1] + '  ' + String(t.day).padStart(2, '0') + ' ' + months[t.month - 1] + '  ' + t.year
+    })
+  },
+
+  updateBattery() {
+    this.batteryText.setProperty(hmUI.prop.MORE, {
+      text: 'BATTERY   ' + this.battery.current + '%'
+    })
+  },
+
+  updateSteps() {
+    const value = String(this.steps.current).replace(/(\\d)(?=(\\d{3})+$)/g, '$1 ')
+    this.stepsText.setProperty(hmUI.prop.MORE, {
+      text: value
+    })
+  },
+
+  updateHeart() {
+    const value = this.heart.current
+    this.heartText.setProperty(hmUI.prop.MORE, {
+      text: 'HEART   ' + (value > 0 ? value : '--')
+    })
   },
 
   metricRing(cx, cy, radius, start, end, value, unit, label) {

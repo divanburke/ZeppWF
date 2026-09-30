@@ -181,7 +181,7 @@ WatchFace({
   },
 
   updateSteps() {
-    const value = String(this.steps.current).replace(/(\\d)(?=(\\d{3})+$)/g, '$1 ')
+    const value = String(this.steps.current).replace(/(\d)(?=(\d{3})+$)/g, '$1 ')
     this.stepsText.setProperty(hmUI.prop.MORE, {
       text: value
     })

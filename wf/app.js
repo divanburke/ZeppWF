@@ -1,10 +1,11 @@
 App({
   globalData: {},
-  onCreate(options) {
-    console.log('app on create invoke')
+
+  onCreate() {
+    console.log('Zepp WF created')
   },
 
-  onDestroy(options) {
-    console.log('app on destroy invoke')
+  onDestroy() {
+    console.log('Zepp WF destroyed')
   }
 })
